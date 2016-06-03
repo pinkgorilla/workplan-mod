@@ -1,0 +1,35 @@
+{
+  "name": "workplan-mod",
+  "version": "1.0.0",
+  "description": "workplan module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinkgorilla/workplan-mod.git"
+  },
+  "author": "Tris Setiawan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pinkgorilla/workplan-mod/issues"
+  },
+  "homepage": "https://github.com/pinkgorilla/workplan-mod#readme",
+  "devDependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "mocha": "^2.5.3",
+    "mongo-factory": "^1.0.0",
+    "mongodb": "^2.1.21",
+    "morgan": "^1.7.0",
+    "passport": "^0.3.2",
+    "should": "^9.0.0",
+    "supertest": "^1.2.0"
+  },
+  "dependencies": {
+    "capital-models": "^1.0.12",
+    "mean-toolkit": "^1.0.6",
+    "sha1": "^1.1.1"
+  }
+}
