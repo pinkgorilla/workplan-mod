@@ -1,21 +1,23 @@
 'use strict'
 
-var Map = require('capital-models').map;
 var ObjectId = require('mongodb').ObjectId;
 var Manager = require('mean-toolkit').Manager;
 var PeriodManager = require('./period-manager');
 var moment = require('moment');
-var UserWorkplan = require('capital-models').workplan.UserWorkplan;
-var UserWorkplanItem = require('capital-models').workplan.UserWorkplanItem;
-var UserWorkplanSummary = require('capital-models').workplan.UserWorkplanSummary;
+
+var WorkplanModels = require('workplan-models');
+var Map = WorkplanModels.map;
+var UserWorkplan = WorkplanModels.UserWorkplan;
+var UserWorkplanItem = WorkplanModels.UserWorkplanItem;
+var UserWorkplanSummary = WorkplanModels.UserWorkplanSummary;
 
 module.exports = class UserWorkplanManager extends Manager {
 
     constructor(db, user) {
         super(db);
         this.user = user;
-        this.periodCollection = this.db.collection(Map.workplan.period);
-        this.workplanCollection = this.db.collection(Map.workplan.userWorkplan);
+        this.periodCollection = this.db.collection(Map.Period);
+        this.workplanCollection = this.db.collection(Map.UserWorkplan);
     }
 
     read(accountId) {
@@ -39,7 +41,9 @@ module.exports = class UserWorkplanManager extends Manager {
                                         resolve(wp);
                                     }
                                 })
-                                .catch(e => reject(e));
+                                .catch(e => {
+                                    reject(e);
+                                });
                         });
                         promises.push(asyncJob);
                     }
@@ -48,17 +52,21 @@ module.exports = class UserWorkplanManager extends Manager {
                         .then(result => {
                             resolve(result);
                         })
-                        .catch(e => reject(e));
+                        .catch(e => {
+                            reject(e);
+                        });
                 })
-                .catch(e => reject(e));
+                .catch(e => {
+                    reject(e);
+                });
 
         });
     }
 
     get(user, month, period) {
         return new Promise((resolve, reject) => {
-            //1. get period.
-            this._getPeriod({ month: month, period: period })
+            //1. get period.                        
+            this._getPeriod({ $and: [{ month: month }, { $or: [{ period: parseInt(period) }, { period: period.toString() }] }] })
                 .then(period => {
                     //1a. get period success.
                     var initial = user.initial;
@@ -120,9 +128,13 @@ module.exports = class UserWorkplanManager extends Manager {
         });
     }
 
-    insight(user) {
+    insight(user, month, period) {
         return new Promise((resolve, reject) => {
-            this._getPeriod()
+            var query = null;
+            if (month && period)
+                query = { $and: [{ month: month }, { $or: [{ period: parseInt(period) }, { period: period.toString() }] }] };
+
+            this._getPeriod(query)
                 .then(period => {
                     this.get(user, period.month, period.period)
                         .then(workplan => resolve(workplan))
@@ -187,7 +199,7 @@ module.exports = class UserWorkplanManager extends Manager {
                             workplanItem.stamp(user.username, '');
 
                             if (!item.done && updateItem.done) {
-                                var now = moment(new Date()).format("YYYY-MM-DD");
+                                var now = moment().toDate();
                                 workplanItem.completedDate = now;
                             }
 
@@ -204,35 +216,9 @@ module.exports = class UserWorkplanManager extends Manager {
         });
     }
 
-    createItem(user, month, period, createItem) {
-        return new Promise((resolve, reject) => {
-            this.get(user, month, period)
-                .then(workplan => {
-                    var workplanItem = new UserWorkplanItem(Object.assign({}, item, createItem));
-                    workplanItem.userWorkplanId = workplan._id;
-                    workplanItem.stamp(user.username, '');
-
-                    if (createItem.done) {
-                        var now = moment(new Date()).format("YYYY-MM-DD");
-                        workplanItem.completedDate = now;
-                    }
-
-                    workplan.items.push(workplanItem);
-                    this.update(user, workplan)
-                        .then(updatedWorkplan => resolve(updatedWorkplan))
-                        .catch(e => reject(e));
-                })
-                .catch(e => reject(e));
-        });
-    }
-
     summary(month, period) {
         return new Promise((resolve, reject) => {
-            var query = null;
-            if (month && period)
-                query = { month: month, period: period };
-
-            this._getPeriod(query)
+            this._getPeriod(month, period)
                 .then(period => {
                     var query = { periodId: period._id };
                     this.workplanCollection
@@ -258,18 +244,18 @@ module.exports = class UserWorkplanManager extends Manager {
         });
     }
 
-    _getPeriod(query) {
+    _getPeriod(month, period) {
         return new Promise((resolve, reject) => {
-            var periodQuery;
-            if (query)
-                periodQuery = query;
-            else {
-                var now = moment(new Date()).format("YYYY-MM-DD");
-                periodQuery = { $and: [{ from: { $lte: now } }, { to: { $gte: now } }] };
-            }
-
             var periodManager = new PeriodManager(this.db);
-            periodManager.get(periodQuery)
+            var periodPromise;
+            if (month && period)
+                periodPromise = periodManager.getByMonthAndPeriod(month, period);
+            else {
+                var now = moment(new Date()).toDate();
+                var periodQuery = { $and: [{ from: { $lte: now } }, { to: { $gte: now } }] };
+                periodPromise = periodManager.getByQuery(periodQuery);
+            }
+            periodPromise
                 .then(period => {
                     resolve(period);
                 })
@@ -335,7 +321,7 @@ module.exports = class UserWorkplanManager extends Manager {
 
                         userWorkplan.items = workplanItems;
                         if (userWorkplan.items.length > 0)
-                            userWorkplan.completion = (completedCount * 100 / userWorkplan.items.length).toFixed(2);
+                            userWorkplan.completion = parseFloat((completedCount * 100 / userWorkplan.items.length).toFixed(2));
 
                         resolve(userWorkplan);
                     }
@@ -347,7 +333,7 @@ module.exports = class UserWorkplanManager extends Manager {
     _ensureIndexes() {
         return new Promise((resolve, reject) => {
             // account indexes
-            var userWorkplanPromise = this.db.collection(Map.workplan.userWorkplan).createIndexes([
+            var userWorkplanPromise = this.workplanCollection.createIndexes([
                 {
                     key: { accountId: 1, periodId: 1 },
                     name: "ix_user-workplans_accountId_periodId",

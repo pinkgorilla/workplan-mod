@@ -1,3 +1,9 @@
+
+var conString = process.env.DB_CONNECTIONSTRING;
+var user = {
+    username: 'unit-test'
+};
+
 exports.test = function (name, path) {
     describe(name, function () {
         require(path);
@@ -5,38 +11,14 @@ exports.test = function (name, path) {
 }
 
 exports.config = {
-    connectionString: process.env.DB_CONNECTIONSTRING,
+    connectionString: conString,
     server: {
         host: 'localhost',
-        port: 3000,
+        port: 3030,
     },
     jwt: {
         secret: process.env.AUTH_SECRET
     }
 };
 
-exports.user = {
-    username: 'unit-test'
-};
-
-
-exports.newUser = function () {
-
-    var date = new Date();
-    var code = date.getTime().toString(16);
-    var newData = {
-        // account
-        username: code,
-        password: "Standar123",
-        email: code + "@unit-test.com",
-        // info
-        nik: code,
-        initial: "ABC",
-        department: "quality-control",
-        // profile
-        name: "unit test - " + code,
-        dob: date,
-        gender: "M"
-    };
-    return newData;
-}
+exports.user = user;

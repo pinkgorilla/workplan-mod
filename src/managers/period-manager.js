@@ -1,20 +1,23 @@
 'use strict'
 // external deps
+var moment = require('moment');
+require('moment-range');
 var ObjectId = require('mongodb').ObjectId;
 var Sha1 = require('sha1');
 
 // internal deps
 var Manager = require('mean-toolkit').Manager;
-var Map = require('capital-models').map;
+var WorkplanModels = require('workplan-models');
+var Map = WorkplanModels.map;
 
 // model types
-var Period = require('capital-models').workplan.period;
+var Period = WorkplanModels.Period;
 
 module.exports = class PeriodManager extends Manager {
     constructor(db, user) {
         super(db);
         this.user = user;
-        this.periodCollection = this.db.collection(Map.workplan.period);
+        this.periodCollection = this.db.collection(Map.Period);
     }
 
 
@@ -43,7 +46,7 @@ module.exports = class PeriodManager extends Manager {
 
     getByMonthAndPeriod(month, period) {
         return new Promise((resolve, reject) => {
-            var query = { month: month, period: period };
+            var query = { $and: [{ month: month }, { $or: [{ period: parseInt(period) }, { period: period.toString() }] }] };
             this.getByQuery(query)
                 .then(period => resolve(period))
                 .catch(e => {
@@ -70,7 +73,7 @@ module.exports = class PeriodManager extends Manager {
     create(period) {
         return new Promise((resolve, reject) => {
             var data = new Period(period);
-            data.stamp('actor', 'agent');
+            data.stamp(this.user.username, 'agent');
             data.from = moment(data.from).format("YYYY-MM-DD");
             data.to = moment(data.to).format("YYYY-MM-DD");
 
@@ -84,7 +87,7 @@ module.exports = class PeriodManager extends Manager {
                             //2a. ensure index success.
                             validPeriod.stamp(this.user.username, 'agent');
                             //3. insert period.
-                            this.periodCollection.dbInsert(data)
+                            this.periodCollection.dbInsert(validPeriod)
                                 .then(result => {
                                     //3a. insert period success.
                                     resolve(result);
@@ -119,10 +122,10 @@ module.exports = class PeriodManager extends Manager {
                 .then(dbPeriod => {
                     //1a. get period by query success.
                     //check stamp.
-                    if (dbPeriod._stamp && dbPeriod._stamp.toString().length > 0 && dbPeriod._stamp != date._stamp)
+                    if (dbPeriod._stamp && dbPeriod._stamp.toString().length > 0 && dbPeriod._stamp != period._stamp)
                         reject("stamp mismatch");
                     else {
-                        var p = new Period(Object.assign({}, dbPeriod, data))
+                        var p = Object.assign({}, dbPeriod, data);
                         //2. validate period.
                         this._validate(p)
                             .then(validPeriod => {
@@ -171,17 +174,25 @@ module.exports = class PeriodManager extends Manager {
     }
 
     _validate(period) {
-        var vPeriod = new Period(period);
         return new Promise((resolve, reject) => {
+            var vPeriod = new Period(period);
+            vPeriod.from = moment(vPeriod.from, "YYYY-MM-DD").toDate();
+            vPeriod.to = moment(vPeriod.to, "YYYY-MM-DD").toDate();
+            var range = moment.range(vPeriod.from, vPeriod.to);
+
             this.periodCollection.find().toArray()
                 .then(periods => {
-                    for (var p of periods) {
-                        if (p._id.toString() != (period._id || '').toString() && this._dateRangeOverlaps(p.from, p.to, period.from, period.to)) {
+                    for (var testPeriod of periods) {
+                        var testFrom = moment(testPeriod.from, "YYYY-MM-DD").toDate();
+                        var testTo = moment(testPeriod.to, "YYYY-MM-DD").toDate();
+                        var testRange = moment.range(testFrom, testTo);
+
+                        if (testPeriod._id.toString() != (vPeriod._id || '').toString() && range.overlaps(testRange)) {
                             reject("date overlap with another period");
                             return;
                         }
                     }
-                    resolve(period);
+                    resolve(vPeriod);
                 })
                 .catch(e => reject(e));
         });
