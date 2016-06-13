@@ -1,6 +1,6 @@
 {
   "name": "workplan-mod",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "workplan module",
   "main": "index.js",
   "scripts": {

@@ -65,8 +65,11 @@ module.exports = class UserWorkplanManager extends Manager {
 
     get(user, month, period) {
         return new Promise((resolve, reject) => {
+            var query = null;
+            if (month && period)
+                query = { $and: [{ month: month }, { $or: [{ period: parseInt(period) }, { period: period.toString() }] }] };
             //1. get period.                        
-            this._getPeriod({ $and: [{ month: month }, { $or: [{ period: parseInt(period) }, { period: period.toString() }] }] })
+            this._getPeriod(query)
                 .then(period => {
                     //1a. get period success.
                     var initial = user.initial;
@@ -218,7 +221,9 @@ module.exports = class UserWorkplanManager extends Manager {
 
     summary(month, period) {
         return new Promise((resolve, reject) => {
-            this._getPeriod(month, period)
+
+            var query = { $and: [{ month: month }, { $or: [{ period: parseInt(period) }, { period: period.toString() }] }] };
+            this._getPeriod(query)
                 .then(period => {
                     var query = { periodId: period._id };
                     this.workplanCollection
@@ -244,12 +249,12 @@ module.exports = class UserWorkplanManager extends Manager {
         });
     }
 
-    _getPeriod(month, period) {
+    _getPeriod(query) {
         return new Promise((resolve, reject) => {
             var periodManager = new PeriodManager(this.db);
             var periodPromise;
-            if (month && period)
-                periodPromise = periodManager.getByMonthAndPeriod(month, period);
+            if (query)
+                periodPromise = periodManager.getByQuery(query);
             else {
                 var now = moment(new Date()).toDate();
                 var periodQuery = { $and: [{ from: { $lte: now } }, { to: { $gte: now } }] };
