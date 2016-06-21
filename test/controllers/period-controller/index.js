@@ -8,7 +8,23 @@ var url = shared.config.server.host + ':' + shared.config.server.port;
 var token;
 var actor;
 var createdData;
+function getPeriod(month, period) {
+    return new Promise((resolve, reject) => {
+        request(url)
+            .get('/periods/' + month + '/' + period)
+            .set('Authorization', 'JWT ' + token)
+            .expect(200)
+            .end(function (err, response) {
+                if (err)
+                    reject(err);
+                else {
+                    var result = response.body;
+                    resolve(result);
+                }
+            });
 
+    });
+}
 before('#00. Authenticate', function (done) {
     data.getSignedInUser()
         .then(signedInUser => {
@@ -62,16 +78,21 @@ it('#02. Should be able to create data', function (done) {
                     if (err)
                         done(err);
                     else {
-                        var result = response.body;
-                        should.notEqual(result.apiVersion, "0.0.0", "api version not set");
-                        result.should.have.property('data');
-                        result.data.should.not.instanceOf(Array);
-                        createdData = result.data;
-                        createdData.month.should.be.equal(newPeriod.month);
-                        createdData.period.should.be.equal(newPeriod.period);
-                        createdData._createdBy.should.be.equal(actor.username);
-                        createdData._updatedBy.should.be.equal(actor.username);
-                        done();
+                        getPeriod(newPeriod.month, newPeriod.period)
+                            .then(result => {
+                                should.notEqual(result.apiVersion, "0.0.0", "api version not set");
+                                result.should.have.property('data');
+                                result.data.should.not.instanceOf(Array);
+                                createdData = result.data;
+                                createdData.month.should.be.equal(newPeriod.month);
+                                createdData.period.should.be.equal(newPeriod.period);
+                                createdData._createdBy.should.be.equal(actor.username);
+                                createdData._updatedBy.should.be.equal(actor.username);
+                                done();
+                            })
+                            .catch(e => {
+                                done(e);
+                            });
                     }
                 });
         })
@@ -89,6 +110,23 @@ it('#03. Should be able to get created data', function (done) {
             if (err)
                 done(err);
             else {
+
+                // getPeriod(createdData.month, createdData.period)
+                //     .then(result => {
+                //         should.notEqual(result.apiVersion, "0.0.0", "api version not set");
+                //         result.should.have.property('data');
+                //         result.data.should.not.instanceOf(Array);
+                //         createdData = result.data;
+                //         createdData.month.should.be.equal(newPeriod.month);
+                //         createdData.period.should.be.equal(newPeriod.period);
+                //         createdData._createdBy.should.be.equal(actor.username);
+                //         createdData._updatedBy.should.be.equal(actor.username);
+                //         done();
+                //     })
+                //     .catch(e => {
+                //         done(e);
+                //     });
+
                 var result = response.body;
                 should.notEqual(result.apiVersion, "0.0.0", "api version not set");
                 result.should.have.property('data');
@@ -113,15 +151,31 @@ it('#04. Should be able to update created data', function (done) {
             if (err)
                 done(err);
             else {
-                var result = response.body;
-                should.notEqual(result.apiVersion, "0.0.0", "api version not set");
-                result.should.have.property('data');
-                result.data.should.not.instanceOf(Array);
-                var updatedData = result.data;
-                should.equal(dataToBeUpdated.month, updatedData.month, "month not match.");
-                should.equal(dataToBeUpdated.period, updatedData.period, "period not match.");
-                should.notEqual(dataToBeUpdated._stamp, updatedData._stamp, "_stamp must not match.");
-                done();
+
+                getPeriod(dataToBeUpdated.month, dataToBeUpdated.period)
+                    .then(result => {
+                        should.notEqual(result.apiVersion, "0.0.0", "api version not set");
+                        result.should.have.property('data');
+                        result.data.should.not.instanceOf(Array);
+                        var updatedData = result.data;
+                        should.equal(dataToBeUpdated.month, updatedData.month, "month not match.");
+                        should.equal(dataToBeUpdated.period, updatedData.period, "period not match.");
+                        should.notEqual(dataToBeUpdated._stamp, updatedData._stamp, "_stamp must not match.");
+                        done();
+                    })
+                    .catch(e => {
+                        done(e);
+                    });
+
+                // var result = response.body;
+                // should.notEqual(result.apiVersion, "0.0.0", "api version not set");
+                // result.should.have.property('data');
+                // result.data.should.not.instanceOf(Array);
+                // var updatedData = result.data;
+                // should.equal(dataToBeUpdated.month, updatedData.month, "month not match.");
+                // should.equal(dataToBeUpdated.period, updatedData.period, "period not match.");
+                // should.notEqual(dataToBeUpdated._stamp, updatedData._stamp, "_stamp must not match.");
+                // done();
             }
         });
 })

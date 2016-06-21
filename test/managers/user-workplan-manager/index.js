@@ -67,10 +67,15 @@ it('#02. Add workplan item to user workplan', function (done) {
                     workplan.items.push(new UserWorkplanItem({ type: "Project", name: "ITEM 01", description: "DESC 01", estimatedDate: workplan.period.to, completedDate: workplan.period.to }))
                     workplan.items.push(new UserWorkplanItem({ type: "Project", name: "ITEM 02", description: "DESC 02", estimatedDate: workplan.period.to, done: true, completedDate: workplan.period.to }))
                     manager.update(signedInUser, workplan)
-                        .then(updatedWorkplan => {
-                            checkDataIntegrity(updatedWorkplan);
-                            updatedWorkplan.completion.should.equal(50, "completion invalid");
-                            done();
+                        .then(updatedWorkplanId => {
+
+                            manager.get(signedInUser, period.month, period.period)
+                                .then(updatedWorkplan => {
+                                    checkDataIntegrity(updatedWorkplan);
+                                    updatedWorkplan.completion.should.equal(50, "completion invalid");
+                                    done();
+                                })
+                                .catch(e => done(e));
                         })
                         .catch(e => done(e));
                 })
@@ -89,10 +94,14 @@ it('#03. Update workplan item to user workplan', function (done) {
                     item.description = item.description + '-[updated]';
 
                     manager.updateItem(signedInUser, period.month, period.period, item)
-                        .then(updatedWorkplan => {
-                            checkDataIntegrity(updatedWorkplan);
-                            updatedWorkplan.completion.should.equal(100, "completion invalid");
-                            done();
+                        .then(updatedWorkplanId => { 
+                            manager.get(signedInUser, period.month, period.period)
+                                .then(updatedWorkplan => {
+                                    checkDataIntegrity(updatedWorkplan);
+                                    updatedWorkplan.completion.should.equal(100, "completion invalid");
+                                    done();
+                                })
+                                .catch(e => done(e)); 
                         })
                         .catch(e => done(e));
                 })
@@ -101,14 +110,14 @@ it('#03. Update workplan item to user workplan', function (done) {
 })
 
 it('#04. Get workplan insight', function (done) {
-    // data.getLatestPeriod()
-    //     .then(period => {
-    // manager.insight(signedInUser, period.month, period.period)
-    manager.insight(signedInUser)
-        .then(workplan => {
-            checkDataIntegrity(workplan);
-            done();
+    data.getLatestPeriod()
+        .then(period => {
+            manager.insight(signedInUser, period.month, period.period)
+                // manager.insight(signedInUser)
+                .then(workplan => {
+                    checkDataIntegrity(workplan);
+                    done();
+                })
+                .catch(e => done(e));
         })
-        .catch(e => done(e));
-    // })
 })

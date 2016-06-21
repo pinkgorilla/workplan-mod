@@ -17,13 +17,14 @@ module.exports = class PeriodManager extends Manager {
     constructor(db, user) {
         super(db);
         this.user = user;
-        this.periodCollection = this.db.collection(Map.Period);
+        this.periodCollection = this.db.use(Map.Period);
     }
 
 
     read() {
         return new Promise((resolve, reject) => {
-            this.periodCollection.find().toArray()
+            this.periodCollection
+                .execute()
                 .then(periods => {
                     resolve(periods);
                 })
@@ -58,7 +59,8 @@ module.exports = class PeriodManager extends Manager {
     getByQuery(query) {
         return new Promise((resolve, reject) => {
             //1. get period by query.
-            this.periodCollection.dbSingle(query)
+            this.periodCollection
+                .single(query)
                 .then(period => {
                     //1a. get period by query success.
                     resolve(period);
@@ -87,7 +89,7 @@ module.exports = class PeriodManager extends Manager {
                             //2a. ensure index success.
                             validPeriod.stamp(this.user.username, 'agent');
                             //3. insert period.
-                            this.periodCollection.dbInsert(validPeriod)
+                            this.periodCollection.insert(validPeriod)
                                 .then(result => {
                                     //3a. insert period success.
                                     resolve(result);
@@ -118,7 +120,7 @@ module.exports = class PeriodManager extends Manager {
 
             var query = { _id: data._id };
             //1. get period by query.
-            this.periodCollection.dbSingle(query)
+            this.periodCollection.single(query)
                 .then(dbPeriod => {
                     //1a. get period by query success.
                     //check stamp.
@@ -132,7 +134,7 @@ module.exports = class PeriodManager extends Manager {
                                 //2a. validate period success.
                                 validPeriod.stamp(this.user.username, 'agent')
                                 //3. update period.
-                                this.periodCollection.dbUpdate(query, validPeriod)
+                                this.periodCollection.update(validPeriod)
                                     .then(doc => {
                                         //3. update period success.
                                         resolve(doc);
@@ -180,7 +182,7 @@ module.exports = class PeriodManager extends Manager {
             vPeriod.to = moment(vPeriod.to, "YYYY-MM-DD").toDate();
             var range = moment.range(vPeriod.from, vPeriod.to);
 
-            this.periodCollection.find().toArray()
+            this.periodCollection.execute()
                 .then(periods => {
                     for (var testPeriod of periods) {
                         var testFrom = moment(testPeriod.from, "YYYY-MM-DD").toDate();

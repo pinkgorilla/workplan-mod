@@ -23,7 +23,7 @@ module.exports = class UserWorkplanManager extends Manager {
     read(accountId) {
         return new Promise((resolve, reject) => {
 
-            this.periodCollection.find().toArray()
+            this.periodCollection.execute()
                 .then(periods => {
                     var promises = [];
                     var _accountId = new ObjectId(accountId);
@@ -31,7 +31,7 @@ module.exports = class UserWorkplanManager extends Manager {
                         var asyncJob = new Promise((resolve, reject) => {
                             var p = period;
                             var query = { accountId: _accountId, periodId: p._id }
-                            this.workplanCollection.dbSingleOrDefault(query)
+                            this.workplanCollection.singleOrDefault(query)
                                 .then(userWorkplan => {
                                     if (userWorkplan) {
                                         resolve(userWorkplan);
@@ -76,7 +76,7 @@ module.exports = class UserWorkplanManager extends Manager {
                     var _accountId = new ObjectId(user.id);
                     var query = { accountId: _accountId, periodId: period._id };
                     //2. get user workplan by query.
-                    this.workplanCollection.dbSingleOrDefault(query)
+                    this.workplanCollection.singleOrDefault(query)
                         .then(userWorkplan => {
                             //2a. get user workplan by query success.                            
                             if (userWorkplan == null) {
@@ -95,9 +95,15 @@ module.exports = class UserWorkplanManager extends Manager {
                                         this._ensureIndexes()
                                             .then(indexResults => {
                                                 validWorkplan.stamp(this.user.username, 'actor');
-                                                this.workplanCollection.dbInsert(validWorkplan)
-                                                    .then(result => {
-                                                        resolve(result)
+                                                this.workplanCollection.insert(validWorkplan)
+                                                    .then(workplanId => {
+                                                        this.workplanCollection.single({ _id: workplanId })
+                                                            .then(x => {
+                                                                resolve(x);
+                                                            })
+                                                            .catch(e => {
+                                                                reject(e);
+                                                            });
                                                     })
                                                     .catch(e => {
                                                         reject(e);
@@ -164,7 +170,7 @@ module.exports = class UserWorkplanManager extends Manager {
                 this._getPeriod(periodQuery)
                     .then(period => {
                         var query = { accountId: _accountId, periodId: _periodId };
-                        this.workplanCollection.dbSingle(query)
+                        this.workplanCollection.single(query)
                             .then(dbWorkplan => {
                                 if (dbWorkplan._stamp && dbWorkplan._stamp.toString().length > 0 && dbWorkplan._stamp != workplan._stamp)
                                     reject("stamp mismatch");
@@ -175,18 +181,26 @@ module.exports = class UserWorkplanManager extends Manager {
                                             for (var item of validWorkplan.items)
                                                 item.stamp(this.user.username, 'actor');
 
-                                            this.workplanCollection.dbUpdate(query, validWorkplan)
+                                            this.workplanCollection.update(validWorkplan)
                                                 .then(doc => {
                                                     resolve(doc);
                                                 })
-                                                .catch(e => reject(e));
+                                                .catch(e => {
+                                                    reject(e);
+                                                });
                                         })
-                                        .catch(e => reject(e));
+                                        .catch(e => {
+                                            reject(e);
+                                        });
                                 }
                             })
-                            .catch(e => reject(e));
+                            .catch(e => {
+                                reject(e);
+                            });
                     })
-                    .catch(e => reject(e));
+                    .catch(e => {
+                        reject(e);
+                    });
             }
         });
     }
@@ -213,9 +227,13 @@ module.exports = class UserWorkplanManager extends Manager {
                     }
                     this.update(user, workplan)
                         .then(updatedWorkplan => resolve(updatedWorkplan))
-                        .catch(e => reject(e));
+                        .catch(e => {
+                            reject(e);
+                        });
                 })
-                .catch(e => reject(e));
+                .catch(e => {
+                    reject(e);
+                });
         });
     }
 
@@ -243,9 +261,13 @@ module.exports = class UserWorkplanManager extends Manager {
                         .then(collections => {
                             resolve(collections);
                         })
-                        .catch(e => reject(e));
+                        .catch(e => {
+                            reject(e);
+                        });
                 })
-                .catch(e => reject(e));
+                .catch(e => {
+                    reject(e);
+                });
         });
     }
 
@@ -264,7 +286,9 @@ module.exports = class UserWorkplanManager extends Manager {
                 .then(period => {
                     resolve(period);
                 })
-                .catch(e => reject(e));
+                .catch(e => {
+                    reject(e);
+                });
         });
     }
 
@@ -331,7 +355,9 @@ module.exports = class UserWorkplanManager extends Manager {
                         resolve(userWorkplan);
                     }
                 })
-                .catch(e => reject(e));
+                .catch(e => {
+                    reject(e);
+                });
         });
     }
 

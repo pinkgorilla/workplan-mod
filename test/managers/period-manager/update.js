@@ -31,12 +31,18 @@ it('#01. Should success when update data', function (done) {
             dataToBeUpdated = data;
 
             manager.update(dataToBeUpdated)
-                .then(updatedData => {
-                    should.notEqual(dataToBeUpdated._stamp, updatedData._stamp, "_stamp must not match.");
-                    updatedData._id.should.be.instanceOf(Object);
-                    updatedData.from.should.be.instanceOf(Date);
-                    updatedData.to.should.be.instanceOf(Date);
-                    done();
+                .then(updatedDataId => {
+
+                    manager.getByQuery({ _id: updatedDataId })
+                        .then(updatedData => {
+                            should.notEqual(dataToBeUpdated._stamp, updatedData._stamp, "_stamp must not match.");
+                            updatedData._id.should.be.instanceOf(Object);
+                            updatedData.from.should.be.instanceOf(Date);
+                            updatedData.to.should.be.instanceOf(Date);
+                            done();
+                        })
+                        .catch(e => done(e));
+
                 })
                 .catch(e => done(e));
         })

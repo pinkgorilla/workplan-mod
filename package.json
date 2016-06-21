@@ -1,6 +1,6 @@
 {
   "name": "workplan-mod",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "workplan module",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/pinkgorilla/workplan-mod#readme",
   "devDependencies": {
-    "authentication-mod": "^1.0.1",
+    "authentication-mod": "git+https://git@github.com/pinkgorilla/authentication-module.git",
     "body-parser": "^1.15.1",
     "express": "^4.13.4",
     "mocha": "^2.5.3",
@@ -29,7 +29,8 @@
     "supertest": "^1.2.0"
   },
   "dependencies": {
-    "mean-toolkit": "^1.0.6",
+    "json2csv": "^3.4.2",
+    "mean-toolkit": "git+https://git@github.com/pinkgorilla/mean-toolkit.git",
     "moment": "^2.13.0",
     "moment-range": "^2.2.0",
     "sha1": "^1.1.1",

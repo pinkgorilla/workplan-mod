@@ -28,7 +28,7 @@ function getSignedInUser() {
                 .then(db => {
                     var AccountManager = require('authentication-mod').managers.AccountManager;
                     var accountManager = new AccountManager(db, shared.user);
-                    accountManager.accountCollection.dbFirst()
+                    accountManager.accountCollection.first()
                         .then(account => {
                             accountManager.authenticate(account.username, "Standar123")
                                 .then(signedInUser => {

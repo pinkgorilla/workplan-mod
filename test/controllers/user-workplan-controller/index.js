@@ -107,7 +107,6 @@ it('#03. Should be able to update workplan data', function (done) {
                         workplan.items.push(new UserWorkplanItem({ type: "Project", name: "ITEM 03", description: "DESC 03", estimatedDate: workplan.period.to, completedDate: workplan.period.to }))
                         workplan.items.push(new UserWorkplanItem({ type: "Project", name: "ITEM 04", description: "DESC 04", estimatedDate: workplan.period.to, completedDate: workplan.period.to }))
 
-
                         request(url)
                             .put('/workplans/' + period.month + '/' + period.period)
                             .set('Authorization', 'JWT ' + token)
@@ -118,22 +117,33 @@ it('#03. Should be able to update workplan data', function (done) {
                                 if (err)
                                     done(err);
                                 else {
-                                    var result = response.body;
-                                    should.notEqual(result.apiVersion, "0.0.0", "api version not set");
-                                    result.should.have.property('data');
-                                    result.data.should.not.instanceOf(Array);
-                                    var updatedWorkplan = result.data;
-                                    updatedWorkplan.should.have.property('_id');
-                                    updatedWorkplan.should.have.property('period');
-                                    updatedWorkplan.should.have.property('user');
-                                    updatedWorkplan.should.have.property('items');
+                                    request(url)
+                                        .get('/workplans/' + period.month + '/' + period.period)
+                                        .set('Authorization', 'JWT ' + token)
+                                        .expect(200)
+                                        .end(function (err, response) {
+                                            if (err)
+                                                done(err);
+                                            else {
 
-                                    updatedWorkplan.period.should.be.instanceOf(Object);
-                                    updatedWorkplan.user.should.be.instanceOf(Object);
-                                    updatedWorkplan.items.should.be.instanceOf(Array);
-                                    done();
+                                                var result = response.body;
+                                                should.notEqual(result.apiVersion, "0.0.0", "api version not set");
+                                                result.should.have.property('data');
+                                                result.data.should.not.instanceOf(Array);
+                                                var updatedWorkplan = result.data;
+                                                updatedWorkplan.should.have.property('_id');
+                                                updatedWorkplan.should.have.property('period');
+                                                updatedWorkplan.should.have.property('user');
+                                                updatedWorkplan.should.have.property('items');
+
+                                                updatedWorkplan.period.should.be.instanceOf(Object);
+                                                updatedWorkplan.user.should.be.instanceOf(Object);
+                                                updatedWorkplan.items.should.be.instanceOf(Array);
+                                                done();
+                                            }
+                                        });
                                 }
-                            }); 
+                            });
                     }
                 });
         })
