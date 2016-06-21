@@ -12,7 +12,7 @@ module.exports = class UserWorkplanController extends Controller {
     initializeRouter(router) {
 
         var jwt = require('mean-toolkit').passport.jwt;
-        
+
         jwt.strategy(function (payload, done) {
             return done(null, payload.user);
         }, this.options.jwt.secret);
@@ -21,7 +21,7 @@ module.exports = class UserWorkplanController extends Controller {
         router.param('month', (request, response, next, value) => {
             next();
         });
-        
+
         router.param('period', (request, response, next, value) => {
             next();
         });
@@ -58,7 +58,7 @@ module.exports = class UserWorkplanController extends Controller {
                     next(e);
                 });
         });
-        
+
         router.put('/:month/:period', (request, response, next) => {
             var user = request.user;
             var body = request.body;
@@ -105,7 +105,7 @@ module.exports = class UserWorkplanController extends Controller {
                     next(e);
                 });
         });
-        
+
         router.get('/summary/:month/:period', (request, response, next) => {
             var user = request.user;
             var month = request.params.month;
@@ -132,6 +132,7 @@ module.exports = class UserWorkplanController extends Controller {
             var userWorkplanManager = new UserWorkplanManager(this.db, user);
             userWorkplanManager.summary(month, period)
                 .then(doc => {
+                    var json2csv = require('json2csv');
                     json2csv({
                         data: doc,
                         fields: ["code", "user.name", "total", "done", "cancel", "completion"]
