@@ -31,14 +31,12 @@ var initializeServer = function () {
 
                 var UserWorkplanController = require('../../src/controllers/user-workplan-controller');
                 app.use('/workplans', new UserWorkplanController(db, controllerOptions).router);
-
-
-                var port = process.env.PORT || shared.config.server.port;
-                app.listen(port);
-                console.log("Express server listening on port %d in %s mode", port, 'unit-testing');
+                
+                app.listen(shared.config.server.port, shared.config.server.host);
+                console.log("Express server listening on port %d in %s mode", shared.config.server.port, 'unit-testing');
                 resolve(null);
             })
-            .catch(e => done(e));
+            .catch(e => reject(e));
     })
 }
 

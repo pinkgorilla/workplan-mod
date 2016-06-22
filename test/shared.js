@@ -13,8 +13,8 @@ exports.test = function (name, path) {
 exports.config = {
     connectionString: conString,
     server: {
-        host: 'localhost',
-        port: 3030,
+        host: process.env.IP,
+        port: process.env.PORT,
     },
     jwt: {
         secret: process.env.AUTH_SECRET

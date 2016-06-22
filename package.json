@@ -20,6 +20,7 @@
     "authentication-mod": "git+https://git@github.com/pinkgorilla/authentication-module.git",
     "body-parser": "^1.15.1",
     "express": "^4.13.4",
+    "jsonwebtoken": "^7.0.1",
     "mocha": "^2.5.3",
     "mongo-factory": "^1.0.0",
     "mongodb": "^2.1.21",
